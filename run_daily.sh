@@ -32,6 +32,18 @@ else
     PYTHON_CMD="/usr/bin/python3"  # 使用系统Python作为备选
 fi
 
+# 检查并安装依赖
+echo "检查项目依赖..." >> "$LOG_FILE"
+if [ -f "$PROJECT_DIR/requirements.txt" ]; then
+    echo "安装依赖包..." >> "$LOG_FILE"
+    $PYTHON_CMD -m pip install -r "$PROJECT_DIR/requirements.txt" >> "$LOG_FILE" 2>&1
+    echo "依赖安装完成" >> "$LOG_FILE"
+else
+    # 如果没有requirements.txt，至少安装必要的包
+    echo "未找到requirements.txt，安装基本依赖..." >> "$LOG_FILE"
+    $PYTHON_CMD -m pip install python-dotenv requests sqlalchemy >> "$LOG_FILE" 2>&1
+fi
+
 # 进入项目目录
 cd "$PROJECT_DIR" || {
     echo "切换到项目目录失败: $PROJECT_DIR" >> "$LOG_FILE"
@@ -40,7 +52,7 @@ cd "$PROJECT_DIR" || {
 
 # 执行抓取任务
 echo "开始抓取理财产品数据 - $(date +%H:%M:%S)" >> "$LOG_FILE"
-$PYTHON_CMD run.py --max-pages 6 >> "$LOG_FILE" 2>&1
+$PYTHON_CMD run.py >> "$LOG_FILE" 2>&1
 SCRAPER_EXIT_CODE=$?
 
 # 检查抓取任务是否成功
