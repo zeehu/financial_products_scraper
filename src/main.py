@@ -3,9 +3,8 @@ import argparse
 import time
 from datetime import datetime
 
-from config.config import setup_logging, get_database_url, get_scraper_config
-from database.db_manager import DatabaseManager
-from scrapers.chinawealth_scraper import ChinaWealthScraper
+from src import setup_logging, get_database_url, get_scraper_config, ChinaWealthScraper
+from src.database import DatabaseManager
 
 logger = logging.getLogger(__name__)
 

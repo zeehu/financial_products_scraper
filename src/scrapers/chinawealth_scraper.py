@@ -271,7 +271,7 @@ class ChinaWealthScraper(BaseScraper):
                     continue
             
             # 计算总页数
-            page_size = 10  # 每页数据量
+            page_size = 100  # 每页数据量
             total_pages = math.ceil(total_count / page_size)
             if max_pages:
                 total_pages = min(total_pages, max_pages)
