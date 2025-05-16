@@ -29,6 +29,7 @@ setup(
     entry_points={
         "console_scripts": [
             "financial-scraper=src.main:main",
+            "financial-exporter=src.utils.export_data:main",
         ],
     },
 )

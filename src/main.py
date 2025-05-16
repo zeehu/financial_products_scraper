@@ -9,13 +9,19 @@ from src.database import DatabaseManager
 logger = logging.getLogger(__name__)
 
 def main():
-    """主程序入口"""
+    """主程序入口
+    
+    负责解析命令行参数、初始化组件、执行爬虫任务并保存数据。
+    支持设置最大抓取页数和是否使用代理。
+    """
     # 命令行参数解析
     parser = argparse.ArgumentParser(description='理财产品信息抓取工具')
     parser.add_argument('--max-pages', type=int, default=None, 
                         help='最大抓取页数，默认为不限制')
     parser.add_argument('--use-proxy', action='store_true', 
                         help='是否使用代理')
+    parser.add_argument('--product-code', type=str, default=None,
+                        help='指定抓取单个产品，使用产品登记编码')
     args = parser.parse_args()
     
     # 初始化日志
@@ -46,9 +52,16 @@ def main():
         )
         
         # 执行爬取
-        logger.info(f"开始抓取中国财富网理财产品数据 (最大页数: {max_pages if max_pages else '不限制'})")
-        
-        products, navs = scraper.scrape(max_pages=max_pages)
+        if args.product_code:
+            # 单个产品抓取模式
+            logger.info(f"开始抓取指定产品的数据，产品登记编码: {args.product_code}")
+            # 这里需要添加单个产品抓取的逻辑
+            logger.warning("单个产品抓取功能尚未实现")
+            products, navs = [], []
+        else:
+            # 批量抓取模式
+            logger.info(f"开始抓取中国财富网理财产品数据 (最大页数: {max_pages if max_pages else '不限制'})")
+            products, navs = scraper.scrape(max_pages=max_pages)
         
         # 保存数据到数据库
         if products:
