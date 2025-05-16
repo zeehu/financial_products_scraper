@@ -13,7 +13,7 @@ setup(
     name="financial_products_scraper",
     version="0.1.0",
     author="Jezeehu",
-    author_email="zee_hu@qq.com",
+    author_email="zee_h@qq.com",
     description="理财产品数据抓取工具",
     long_description=long_description,
     long_description_content_type="text/markdown",
