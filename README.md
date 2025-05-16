@@ -1,120 +1,160 @@
-# 中国财富网理财产品数据抓取工具
+# 理财产品抓取工具
 
-## 项目简介
-
-该项目用于抓取中国财富网(chinawealth.com.cn)的理财产品基本信息和净值数据，将数据存储到本地数据库中，便于查询和分析。
+抓取中国财富网(chinawealth.com.cn)的理财产品信息和净值数据，并存储到数据库。
 
 ## 功能特点
 
-- 支持抓取中国财富网理财产品基本信息和净值数据
-- 将数据分别存储到两个表中，并支持关联查询
-- 自动比对净值数据，记录更新状态
-- 支持命令行参数配置，方便灵活使用
-- 完善的日志记录和错误处理机制
-- 支持SQLite和MySQL数据库存储
+- 抓取理财产品基本信息
+- 抓取理财产品净值数据
+- 存储数据到SQLite或MySQL数据库
+- 智能错误处理和重试机制
+- 支持数据导出(CSV/Excel)
 
-## 技术栈
+## 安装
 
-- Python 3.7+
-- SQLAlchemy (数据库ORM)
-- Requests (HTTP请求库)
-- BeautifulSoup4 (HTML解析)
-- Pandas (数据处理)
+1. 克隆仓库后，创建虚拟环境：
 
-## 安装使用
-
-### 1. 克隆项目
-```bash
-git clone https://github.com/zeehu/financial_products_scraper.git
-cd financial_products_scraper
-```
-
-### 2. 创建虚拟环境
 ```bash
 python -m venv .venv
-# Windows
-.venv\Scripts\activate
-# Linux/Mac
+```
+
+2. 激活虚拟环境：
+
+在macOS/Linux上：
+```bash
 source .venv/bin/activate
 ```
 
-### 3. 安装依赖
+在Windows上：
+```bash
+.venv\Scripts\activate
+```
+
+3. 安装依赖：
+
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. 配置环境变量
+4. 安装项目（开发模式）：
+
 ```bash
-# 复制环境变量示例文件
-cp .env.example .env
-# 根据需要编辑.env文件
+pip install -e .
 ```
 
-### 5. 运行程序
+## 使用方法
+
+### 数据抓取
+
+直接运行主脚本：
+
 ```bash
 python run.py
 ```
 
-## 命令行参数
+可用参数：
 
-程序支持以下命令行参数：
-
-- `--max-pages`: 限制最大抓取页数，默认不限制
-- `--use-proxy`: 使用代理服务器（需自行配置代理获取逻辑）
-
-示例：
 ```bash
-# 抓取前5页数据
-python run.py --max-pages 5
-
-# 使用代理抓取
-python run.py --use-proxy
+python run.py --max-pages 10  # 限制抓取页数
+python run.py --use-proxy     # 使用代理
 ```
 
-## 数据库设计
+### 数据导出
 
-### 产品基本信息表(products)
+导出数据为CSV和Excel格式：
 
-| 字段名 | 类型 | 说明 |
-|-------|------|-----|
-| id | Integer | 自增主键 |
-| product_id | String | 产品ID (唯一) |
-| product_code | String | 产品登记编码 |
-| product_name | String | 产品名称 |
-| issuer | String | 发行机构 |
-| issuer_code | String | 发行机构代码 |
-| risk_level | String | 风险等级描述 |
-| risk_level_code | String | 风险等级代码 |
-| product_type | String | 产品类型描述 |
-| product_type_code | String | 产品类型代码 |
-| currency | String | 币种 |
-| investment_period | String | 投资期限 |
-| min_investment | String | 起投金额 |
-| sale_status | String | 销售状态 |
-| sale_regions | Text | 销售区域 |
-| start_date | String | 开始日期 |
-| end_date | String | 结束日期 |
-| product_category | String | 产品类别 |
-| income_type | String | 收益类型 |
-| sale_method | String | 销售方式 |
-| created_at | DateTime | 创建时间 |
-| updated_at | DateTime | 更新时间 |
+```bash
+python export_data.py
+```
 
-### 产品净值信息表(product_navs)
+可用参数：
 
-| 字段名 | 类型 | 说明 |
-|-------|------|-----|
-| id | Integer | 自增主键 |
-| product_id | String | 产品ID (外键) |
-| product_code | String | 产品登记编码 |
-| nav_date | Date | 净值日期 |
-| initial_nav | Float | 初始净值 |
-| accumulated_nav | Float | 累计净值 |
-| current_nav | Float | 当前净值 |
-| is_updated | Integer | 是否更新(0:未更新,1:已更新) |
-| last_update_date | Date | 最近更新日期 |
-| created_at | DateTime | 创建时间 |
-| updated_at | DateTime | 更新时间 |
+```bash
+python export_data.py --format csv    # 仅导出CSV格式
+python export_data.py --format excel  # 仅导出Excel格式
+python export_data.py --output-dir ./my_data  # 指定输出目录
+```
+
+## 配置
+
+可以通过环境变量或创建.env文件配置：
+
+- `DB_TYPE`: 数据库类型（sqlite或mysql），默认sqlite
+- `LOG_LEVEL`: 日志级别，默认INFO
+- `MAX_PAGES`: 最大抓取页数，默认不限制
+- `USE_PROXY`: 是否使用代理，默认false
+- `REQUEST_DELAY`: 请求延迟秒数，默认5秒
+
+## 项目结构
+
+```
+financial_products_scraper/
+├── data/                    # 数据目录
+│   ├── db/                  # 数据库文件
+│   ├── export/              # 数据导出目录
+│   └── csv/                 # CSV文件目录
+├── logs/                    # 日志目录 
+├── src/                     # 源代码目录
+│   ├── config/              # 配置模块
+│   ├── database/            # 数据库模块
+│   ├── models/              # 数据模型
+│   ├── scrapers/            # 爬虫模块
+│   └── utils/               # 工具模块
+├── run.py                   # 运行脚本
+├── export_data.py           # 数据导出脚本
+├── requirements.txt         # 依赖文件
+└── setup.py                 # 安装脚本
+```
+
+## 数据库模型
+
+### 产品基本信息表（products）
+
+包含理财产品的基本信息，如产品名称、发行机构、风险等级等。产品登记编码（product_code）作为唯一标识，用于关联查询。
+
+主要字段：
+- `product_code`: 产品登记编码（唯一标识）
+- `product_name`: 产品名称
+- `issuer`: 发行机构
+- `risk_level`: 风险等级
+- `product_type`: 产品类型
+- `currency`: 币种
+- `investment_period`: 投资期限
+- `start_date`: 开始日期
+- `end_date`: 结束日期
+
+### 产品净值信息表（product_navs）
+
+包含理财产品的净值信息，通过product_code与产品基本信息表关联。
+
+主要字段：
+- `product_code`: 产品登记编码（外键）
+- `nav_date`: 净值日期
+- `initial_nav`: 初始净值
+- `accumulated_nav`: 累计净值
+- `current_nav`: 当前净值
+- `is_updated`: 是否更新(0:未更新,1:已更新)
+- `last_update_date`: 最近更新日期
+
+## 导出数据格式
+
+### CSV导出
+
+导出三个CSV文件：
+- `products_[timestamp].csv`: 产品基本信息
+- `navs_[timestamp].csv`: 产品净值信息
+- `combined_[timestamp].csv`: 产品和净值的联合数据
+
+### Excel导出
+
+导出一个Excel文件，包含三个工作表：
+- `产品基本信息`: 产品基本信息表
+- `产品净值信息`: 产品净值信息表
+- `产品完整数据`: 产品和净值的联合数据
+
+## 许可证
+
+MIT
 
 ## 项目结构
 
@@ -162,10 +202,6 @@ financial_products_scraper/
 - 本项目仅用于学习和研究，请勿用于商业用途
 - 爬取数据时请遵守网站的robots协议
 - 请合理设置请求间隔，避免对目标网站造成压力
-
-## 许可证
-
-MIT
 
 ## 贡献
 

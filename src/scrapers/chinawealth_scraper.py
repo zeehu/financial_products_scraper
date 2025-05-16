@@ -10,13 +10,23 @@ from .base_scraper import BaseScraper
 logger = logging.getLogger(__name__)
 
 class ChinaWealthScraper(BaseScraper):
-    """中国财富网理财产品爬虫"""
+    """中国财富网理财产品爬虫
     
+    用于抓取中国财富网(chinawealth.com.cn)的理财产品信息和净值数据。
+    继承自BaseScraper基类，实现具体的抓取逻辑。
+    """
+    
+    # API端点
     BASE_URL = "https://www.chinawealth.com.cn/zzlc/jsp/lccp.jsp"
     API_URL = "https://www.chinawealth.com.cn/LcSolrSearch.go"
     
     def __init__(self, use_proxy: bool = False, **kwargs):
-        """初始化中国财富网爬虫"""
+        """初始化中国财富网爬虫
+        
+        Args:
+            use_proxy: 是否使用代理
+            **kwargs: 传递给父类的其他参数
+        """
         super().__init__(use_proxy=use_proxy, **kwargs)
         
         # 设置请求头
@@ -33,7 +43,14 @@ class ChinaWealthScraper(BaseScraper):
         }
             
     def _get_product_name(self, product_data: dict) -> str:
-        """获取产品名称"""
+        """获取产品名称
+        
+        Args:
+            product_data: 原始产品数据
+            
+        Returns:
+            产品名称字符串
+        """
         try:
             copy_list = product_data.get("copy", [])
             if isinstance(copy_list, list) and len(copy_list) > 2:
@@ -43,10 +60,23 @@ class ChinaWealthScraper(BaseScraper):
             return product_data.get("cpms", "")  # 出错时使用备选字段
             
     def _process_basic_info(self, product_data: dict) -> dict:
-        """处理产品基本信息"""
+        """处理产品基本信息
+        
+        Args:
+            product_data: 原始产品数据
+            
+        Returns:
+            处理后的产品信息字典
+        """
+        # 获取产品编码，确保不为空
+        product_code = product_data.get("cpdjbm", "")
+        if not product_code:
+            logger.warning("产品登记编码为空，使用默认值")
+            product_code = f"UNKNOWN_{product_data.get('id', '')}"
+            
         return {
             "product_id": product_data.get("id", ""),
-            "product_code": product_data.get("cpdjbm", ""),
+            "product_code": product_code,
             "product_name": self._get_product_name(product_data),
             "issuer": product_data.get("fxjgms", ""),
             "issuer_code": product_data.get("fxjgdm", ""),
@@ -68,7 +98,14 @@ class ChinaWealthScraper(BaseScraper):
         }
         
     def _clean_nav_value(self, value: str) -> float:
-        """清理并验证净值数据"""
+        """清理并验证净值数据
+        
+        Args:
+            value: 原始净值字符串
+            
+        Returns:
+            处理后的净值浮点数，无效值返回0.0
+        """
         try:
             if not value or value == "--" or value == "null":
                 return 0.0
@@ -79,11 +116,24 @@ class ChinaWealthScraper(BaseScraper):
             return 0.0
         
     def _process_nav_data(self, product_data: dict) -> Optional[dict]:
-        """处理产品净值数据"""
+        """处理产品净值数据
+        
+        Args:
+            product_data: 原始产品数据
+            
+        Returns:
+            处理后的净值信息字典，无有效净值时返回None
+        """
         # 获取并清理净值数据
         initial_nav = self._clean_nav_value(product_data.get("csjz", ""))
         accumulated_nav = self._clean_nav_value(product_data.get("ljjz", ""))
         current_nav = self._clean_nav_value(product_data.get("cpjz", ""))
+        
+        # 获取产品编码
+        product_code = product_data.get("cpdjbm", "")
+        if not product_code:
+            logger.warning("产品登记编码为空，跳过净值处理")
+            return None
         
         # 检查是否有任何有效的净值数据（大于0）
         if not any([initial_nav > 0, accumulated_nav > 0, current_nav > 0]):
@@ -91,7 +141,7 @@ class ChinaWealthScraper(BaseScraper):
             
         return {
             "product_id": product_data.get("id", ""),
-            "product_code": product_data.get("cpdjbm", ""),
+            "product_code": product_code,
             "initial_nav": initial_nav if initial_nav > 0 else None,  # 初始净值
             "accumulated_nav": accumulated_nav if accumulated_nav > 0 else None,  # 累积净值
             "current_nav": current_nav if current_nav > 0 else None,  # 产品净值
@@ -100,7 +150,11 @@ class ChinaWealthScraper(BaseScraper):
         }
 
     def _init_session(self) -> bool:
-        """初始化会话，获取必要的Cookie"""
+        """初始化会话，获取必要的Cookie
+        
+        Returns:
+            初始化是否成功
+        """
         try:
             # 访问主页获取初始Cookie
             response = self.session.get(
@@ -123,7 +177,14 @@ class ChinaWealthScraper(BaseScraper):
             return False
 
     def _fetch_page(self, page: int) -> Tuple[List[dict], int]:
-        """获取指定页码的数据"""
+        """获取指定页码的数据
+        
+        Args:
+            page: 页码
+            
+        Returns:
+            (产品数据列表, 总数)
+        """
         max_retries = 5
         retry_count = 0
         
@@ -211,7 +272,13 @@ class ChinaWealthScraper(BaseScraper):
         return [], 0
     
     def _save_response(self, page: int, retry_count: int, response):
-        """保存响应内容用于调试"""
+        """保存响应内容用于调试
+        
+        Args:
+            page: 页码
+            retry_count: 重试次数
+            response: 响应对象
+        """
         try:
             debug_dir = os.path.join(os.getcwd(), 'data', 'debug')
             os.makedirs(debug_dir, exist_ok=True)
@@ -229,8 +296,7 @@ class ChinaWealthScraper(BaseScraper):
             logger.warning(f"保存响应内容失败: {str(e)}")
 
     def scrape(self, max_pages: int = None) -> Tuple[List[Dict], List[Dict]]:
-        """
-        执行爬取任务
+        """执行爬取任务
         
         Args:
             max_pages: 最大页数限制，为None表示不限制
